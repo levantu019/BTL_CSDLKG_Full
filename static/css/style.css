@@ -1,0 +1,92 @@
+html, body {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+/* ---------------------------------------------------
+    SIDEBAR STYLE
+----------------------------------------------------- */
+
+#sidebar {
+    width: 400px;
+    position: fixed;
+    top: 0;
+    left: -400px;
+    height: 100vh;
+    z-index: 999;
+    color: #fff;
+    transition: all 0.3s;
+    overflow-y: scroll;
+    box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.2);
+    background: white;
+}
+
+#sidebar.active {
+    left: 0;
+}
+
+.header-sidebar{
+    background: #1A73E8;
+    padding-left: 50px;
+}
+
+#dismiss {
+    float: right;
+    width: 35px;
+    line-height: 35px;
+    text-align: center;
+    right: 10px;
+    cursor: pointer;
+    -webkit-transition: all 0.3s;
+    -o-transition: all 0.3s;
+    transition: all 0.3s;
+    float: clear;
+}
+
+#dismiss i{
+    font-size: 30px;
+}
+
+.input-location{
+    height: 20vh;
+}
+
+.input-location i{
+    margin-right: 20px;
+    line-height: 200%;
+    font-size: 15px;
+}
+
+.fa-circle{
+    margin-top: -4px;
+    margin-left: 18px;
+    font-size: 5px !important;
+}
+
+#sidebar input{
+    width: 250px;
+    background-color: #1A73E8;
+    border: none;
+    border-bottom: 1px solid white;
+    color: #fff;
+    outline: none;
+}
+
+#sidebar input::placeholder{
+    color: white;
+}
+
+/* ---------------------------------------------------
+    MAP
+----------------------------------------------------- */
+
+#map{
+    width: 100%;
+    height: 100%;
+}
+
+.layer-switcher {
+    max-width: 300px;
+}
+  

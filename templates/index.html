@@ -1,0 +1,99 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Tìm đường đi trên khu vực</title>
+        <link rel="shortcut icon" type="image/x-icon" href="{% static 'image/logoico.ico' %}" />
+        <link rel="stylesheet" href="{% static 'bootstrap-4.0.0/css/bootstrap.min.css' %}"/>
+        <link rel="stylesheet" href="{% static 'v6.6.1-dist/ol.css' %}"/>
+        <link rel="stylesheet" href="{% static 'jquery/jquery.mCustomScrollbar.min.css' %}"/>
+        <link rel="stylesheet" href="{% static 'v6.6.1-dist/ol-layerswitcher.css' %}">
+        <link rel="stylesheet" href="{% static 'css/style.css' %}"/>
+        <link rel="stylesheet" href="{% static 'font/css/font-awesome.min.css' %}">
+    </head>
+
+    <body>
+        <!-- Sidebar  -->
+        <nav id="sidebar">
+            <div class="header-sidebar">
+                <div id="dismiss">
+                    <i class="fa fa-close"></i>
+                </div>
+                <div class="row">
+                    <h4 style="margin-left: auto; margin-right: auto;">Tìm đường</h4>
+                </div>
+                <div class="row mt-3">
+                    <div class="input-location">
+                        <div class="row">
+                            <div class="col-1">
+                                <i class="fa fa-circle-o"></i>
+                            </div>
+                            <div class="col-10">
+                                <input type="text" placeholder="Click để chọn điểm bắt đầu..." id="start-point" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <i class="fa fa-circle"></i>
+                        </div>
+                        <div class="row">
+                            <i class="fa fa-circle"></i>
+                        </div>
+                        <div class="row">
+                            <i class="fa fa-circle"></i>
+                        </div>
+                        <div class="row">
+                            <div class="col-1">
+                                <i class="fa fa-map-marker"></i>
+                            </div>
+                            <div class="col-10">
+                                <input type="text" placeholder="Click để chọn điểm đến..." id="end-point" />
+                            </div>
+                        </div>
+                    </div>            
+                </div>
+            </div>
+            <div class="content-result">
+
+            </div>
+        </nav>
+
+        <!-- Map -->
+        <div id="map"></div>
+        
+        <div id="customElement">            
+            <button type="button" id="sidebarCollapse" class="btn btn-info" style="position: absolute; right: 10px; top: 10px;">
+                <i class="fa fa-search" style="font-size: 25px"></i>
+            </button>
+            <button type="button" id="btnRefresh" class="btn btn-info" style="position: absolute; right: 10px; top: 100px;">
+                <i class="fa fa-refresh" style="font-size: 25px"></i>
+            </button>
+            <div id="position_mouse" style="position: absolute; right: 10px; bottom: 10px;"></div>
+        </div>
+    
+
+        <script type="text/javascript" src="{% static 'v6.6.1-dist/ol.js' %}"></script>
+        <script type="text/javascript" src="{% static 'v6.6.1-dist/ol-layerswitcher.js' %}"></script>
+        <script type="text/javascript" src="{% static 'jquery/jquery-3.6.0.js' %}"></script>
+        <script type="text/javascript" src="{% static 'jquery/jquery.mCustomScrollbar.concat.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/script_map.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/script_process.js' %}"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("#sidebar").mCustomScrollbar({
+                    theme: "minimal"
+                });
+    
+                $('#dismiss').on('click', function () {
+                    $('#sidebar').removeClass('active');
+                });
+    
+                $('#sidebarCollapse').on('click', function () {
+                    $('#sidebar').addClass('active');
+                });
+            });
+        </script>
+    </body>
+</html>
