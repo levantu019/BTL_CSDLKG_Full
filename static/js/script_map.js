@@ -33,7 +33,7 @@ var doanduong = new ol.layer.Image({
     source: new ol.source.ImageWMS({
         ratio: 1,
         url: 'http://localhost:8080/geoserver/BTL/wms',
-        params: {LAYERS: 'BTL:doanduong'}
+        params: {LAYERS: 'BTL:doanduong2'}
     })
 });
 
@@ -43,7 +43,7 @@ var nutgiaothong = new ol.layer.Image({
     source: new ol.source.ImageWMS({
         ratio: 1,
         url: 'http://localhost:8080/geoserver/BTL/wms',
-        params: {LAYERS: 'BTL:nutgiaothong'}
+        params: {LAYERS: 'BTL:nutgiaothong2'}
     })
 });
 
@@ -97,24 +97,47 @@ var layerSwitcher = new ol.control.LayerSwitcher({
 });
 map.addControl(layerSwitcher);
 
+// ------------------------------
+// POPUP
+// -----------------------------
+const container = document.getElementById('popup');
+const content = document.getElementById('popup-content');
 
+const overlay = new ol.Overlay({
+    element: container,
+    autoPan: true,
+    autoPanAnimation: {
+        duration: 250,
+    },
+});
 
+map.addOverlay(overlay);
 
+const highlightStyle = new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: 'rgba(255,255,255,1)',
+    }),
+    stroke: new ol.style.Stroke({
+      color: '#FF0000',
+      width: 7,
+    }),
+  });
 
-
-//   const fillStyle = new ol.style.Fill({
-//     color: [84, 118, 255, 1]
-// });
-
-// const strokeStyle = new ol.style.Stroke({
-//     color: [46, 45, 45, 1],
-//     width: 1.3
-// });
-
-// const circleStyle = new ol.style.Circle({
-//     fill: new ol.style.Fill({
-//         color: [245, 49, 5, 1]
-//     }),
-//     radius: 7,
-//     stroke: strokeStyle
-// });
+const select = new ol.interaction.Select({
+    condition: ol.events.condition.pointerMove,
+    style: highlightStyle,
+});
+const selectEvent = select.getFeatures();
+select.on('select', function (evt) {
+    let coordinate;
+    selectEvent.forEach(function (each) {
+      let ten = each.getProperties().f2;
+      let dodai = Math.round(each.getProperties().f3 * 100) / 100;
+      coordinate = each.getProperties().geometry.flatCoordinates;
+      let newRowPopup = `<tr><td>${ten}</td><td>${dodai} &nbsp(m)</td></tr>`; 
+      $("#attributeTable tbody tr").remove();
+      $("#attributeTable tbody").append(newRowPopup);
+    });
+    overlay.setPosition(coordinate);
+});
+map.addInteraction(select);

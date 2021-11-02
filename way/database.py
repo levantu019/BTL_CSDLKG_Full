@@ -45,9 +45,14 @@ def getLayerColumn(name, argsColumns):
 
 
 # Return coordinate of point
-def getCoordinate(fid):
-    query = "SELECT ST_X(pt), ST_Y(pt) from (SELECT geom AS pt from {nutgiaothong} WHERE gid={fid}) AS layerP".format(
-        nutgiaothong=nutgiaothong, fid=fid)
+def getCoordinateID(pointid):
+    query = "SELECT ST_X(pt), ST_Y(pt) from (SELECT geom AS pt from {nutgiaothong} WHERE pointid={pointid}) AS layerP"\
+        .format(nutgiaothong=nutgiaothong, pointid=pointid)
+    return getData(query)
+
+
+def getCoordinate():
+    query = "SELECT pointID, ST_X(geom), ST_Y(geom) FROM {nutgiaothong}".format(nutgiaothong=nutgiaothong)
     return getData(query)
 
 
@@ -66,18 +71,22 @@ def getIdPointClosest(pointClick):
     # Tính khoảng cách từ điểm click đến tất cả các nút và chọn khoảng cách nhỏ nhất
     # từ đó lấy được đối tượng điểm gần nhất
     pointClick_str = f"'POINT({pointClick.X} {pointClick.Y})'"
-    query_pointClosest = "SELECT ST_Distance(pt, geom) AS distance, geom " \
-                         f"FROM (SELECT ST_GeomFromText({pointClick_str}, {srid}) As pt, geom FROM {nutgiaothong}) as ttt " \
+    query_segClosest = "SELECT ST_Distance(pt, geom) AS distance, fromID, toID " \
+                         f"FROM (SELECT ST_GeomFromText({pointClick_str}, {srid}) As pt, geom, fromID, toID FROM {doanduong}) as ttt " \
                          "ORDER BY distance ASC limit 1"
-    pointClosest = getData(query_pointClosest)[0][1]
+    segClosest = getData(query_segClosest)[0]
+    pointIDClosest = [segClosest[1], segClosest[2]]
 
-    # Lấy về id của điểm tương ứng trong layer nutgiaothong
-    # fromID và toID trong layer doanduong tham chiếu đến FID của nút trong nutgiaothong
-    # vì vậy lấy được giá trị objectID rồi phải trừ đi 1
-    query_idpointClosest = f"SELECT pointID FROM {nutgiaothong} WHERE geom = '{pointClosest}'"
-    pointID = getData(query_idpointClosest)
+    query_segClosest = "SELECT ST_Distance(pt, geom) AS distance, pointID " \
+                       f"FROM (SELECT ST_GeomFromText({pointClick_str}, {srid}) As pt, geom, pointID FROM {nutgiaothong} " \
+                       f"WHERE pointID={pointIDClosest[0]} OR pointID={pointIDClosest[1]}) as ttt " \
+                       "ORDER BY distance ASC limit 1"
 
-    return pointID[0][0]
+    # Lấy về pointid của điểm tương ứng trong layer nutgiaothong
+    # query_idpointClosest = f"SELECT pointID FROM {nutgiaothong} WHERE geom = '{pointClosest}'"
+    pointID = getData(query_segClosest)
+
+    return pointID[0][1]
 
 
 # Trả về tập các đoạn đường tạo từ danh sách điểm nút kết quả
@@ -104,45 +113,16 @@ def sumLength():
     return data
 
 
-# Create table result node
-def nodeTable(nodes):
-    # Tạo bảng lưu giá trị các node kết quả
-    query_create = "CREATE TABLE IF NOT EXISTS resultNode(" \
-                   "fromID BIGINT," \
-                   "toID BIGINT" \
-                   ")"
-    executeQuery(query_create)
+def exportGeoJSON(segs):
+    numSegs = len(segs)
+    cod = ""
+    for item in range(numSegs - 1):
+        cod = cod + "SegmentId=" + str(segs[item]) + " OR "
+    cod = cod + "SegmentId=" + str(segs[numSegs-1])
 
-    # Check nếu bảng đã có giá trị thì xoá đi
-    query_delete = "DELETE FROM resultNode"
-    executeQuery(query_delete)
-
-    query_values = ""
-
-    # Bỏ node_end vì cạnh này đã được tính riêng
-    nodes.remove(nodes[0])
-
-    numNodes = len(nodes) - 1
-    for i in range(numNodes - 1):
-        if i == numNodes - 2:
-            query_values = query_values + f"({int(nodes[i])}, {int(nodes[i + 1])}), "
-            query_values = query_values + f"({int(nodes[i + 1])}, {int(nodes[i])})"
-        else:
-            query_values = query_values + f"({int(nodes[i])}, {int(nodes[i + 1])}), "
-            query_values = query_values + f"({int(nodes[i + 1])}, {int(nodes[i])}), "
-
-    query_insert = "INSERT INTO resultNode(fromID, toID) VALUES" + query_values
-    executeQuery(query_insert)
-
-
-# Return geojson segment result
-def exportGeoJSON(nodes):
-    nodeTable(nodes)
-    query_geojson = "SELECT ST_AsGeoJSON(geom) FROM " \
-                    f"(SELECT geom FROM {doanduong} AS dd " \
-                    "INNER JOIN " \
-                    "resultnode AS rn " \
-                    "ON dd.fromid = rn.fromid AND dd.toid = rn.toid) AS s"
+    query_geojson = f"SELECT ST_AsGeoJSON(s.*) FROM " \
+                    f"(SELECT dd.tenduong as f2, ST_Length(dd.geom) as f3, dd.geom FROM {doanduong} AS dd " \
+                        f"WHERE {cod}) AS s"
 
     data = getData(query_geojson)
 
@@ -164,16 +144,16 @@ def query_split_select(_click, _node, _nodeNext):
     #
     query = "WITH " \
             f"points as (select 1 as id, ST_GeomFromText('POINT({_click.X} {_click.Y})', 32648)::geometry as geom), " \
-            f"lines as (select 1 as id, geom from {doanduong} where (fromID='{_node}' AND toID='{_nodeNext}') OR (fromID='{_nodeNext}' AND toID='{_node}') LIMIT 1), " \
+            f"lines as (select 1 as id, geom, tenduong from {doanduong} where (fromID='{_node}' AND toID='{_nodeNext}') OR (fromID='{_nodeNext}' AND toID='{_node}') LIMIT 1), " \
             f"temp_table1 AS (SELECT a.id,ST_ClosestPoint(ST_Union(b.geom), a.geom)::geometry AS geom " \
             f"FROM points a, lines b GROUP BY a.geom,a.id), " \
             f"temp_table2 AS (SELECT 1 AS id, ST_Union(MyST_AsMultiPoint(geom))::geometry AS geom FROM lines), " \
             f"temp_table3 AS (SELECT b.id, ST_snap(ST_Union(b.geom),a.geom, ST_Distance(a.geom,b.geom)*1.01)::geometry AS geom " \
             f"FROM temp_table2 a, temp_table1 b " \
             f"GROUP BY a.geom, b.geom, b.id), " \
-            f"temp_table4 AS (SELECT (ST_Dump(ST_split(st_segmentize(a.geom,1),ST_Union(b.geom)))).geom::geometry AS geom FROM lines a, temp_table3 b " \
-            f"GROUP BY a.geom) " \
-            f"SELECT ST_AsGeoJSON(geom), ST_AsText(ST_StartPoint(geom)), ST_AsText(ST_EndPoint(geom)) FROM temp_table4;"
+            f"temp_table4 AS (SELECT (ST_Dump(ST_split(st_segmentize(a.geom,1),ST_Union(b.geom)))).geom::geometry AS geom, a.tenduong FROM lines a, temp_table3 b " \
+            f"GROUP BY a.geom, a.tenduong) " \
+            f"SELECT ST_AsGeoJSON((t4.geom, t4.tenduong, ST_Length(t4.geom))), ST_AsText(ST_StartPoint(geom)), ST_AsText(ST_EndPoint(geom)) FROM temp_table4 AS t4;"
 
     query_coorPoint = f"SELECT ST_AsText(geom) FROM (SELECT geom FROM {nutgiaothong} WHERE pointID={_nodeNext}) as qr"
 
@@ -187,11 +167,13 @@ def query_split_select(_click, _node, _nodeNext):
     # đồng thời trả về điểm gần nhất (closest)
     for item in data:
         if item[1] == coorP[0][0]:
-            query_line = f"SELECT ST_AsGeoJSON(ST_MakeLine(ST_GeomFromText('POINT({_click.X} {_click.Y})'), ST_GeomFromText('{item[2]}')))"
+            query_line = f"SELECT ST_AsGeoJSON((s.geom, 'noname', ST_Length(s.geom))) FROM " \
+                        f"(SELECT ST_MakeLine(ST_GeomFromText('POINT({_click.X} {_click.Y})'), ST_GeomFromText('{item[2]}')) AS geom) AS s"
             line_made = getData(query_line)
             return [tuple([item[0]])], line_made[0]
         elif item[2] == coorP[0][0]:
-            query_line = f"SELECT ST_AsGeoJSON(ST_MakeLine(ST_GeomFromText('POINT({_click.X} {_click.Y})'), ST_GeomFromText('{item[1]}')))"
+            query_line = f"SELECT ST_AsGeoJSON((s.geom, 'noname', ST_Length(s.geom))) FROM " \
+                        f"(SELECT ST_MakeLine(ST_GeomFromText('POINT({_click.X} {_click.Y})'), ST_GeomFromText('{item[1]}')) AS geom) AS s"
             line_made = getData(query_line)
             return [tuple([item[0]])], line_made[0]
         else:

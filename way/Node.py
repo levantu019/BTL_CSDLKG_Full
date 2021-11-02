@@ -9,13 +9,17 @@ class Node:
         self.id = 0
         self.weight = []
         self.next = []
+        self.seg = []
+        self.preSeg = -1
         self.preResult = -1
         self.minDist = MAX_LENGTH
         self.isVisited = False
-        # Trên lớp giao thông sẽ xuất hiện 1 số các đoạn có cùng 2 node (tạo đừng vong kín),
-        # True để sử dụng đoạn đó, False để coi như khoá lại không sử dụng trong tìm đường
-        # Bìa toán này sẽ đặt True cho đoạn ngắn nhất, các đoạn còn lại là False
-        self.status = []
+
+        # Các tham số dùng cho AStar
+        self.isOpen = False
+        self.isClose = False
+        self.h = -1
+        self.f = MAX_LENGTH
 
 
 class Point:

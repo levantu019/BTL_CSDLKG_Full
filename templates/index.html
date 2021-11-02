@@ -51,11 +51,25 @@
                                 <input type="text" placeholder="Click để chọn điểm đến..." id="end-point" />
                             </div>
                         </div>
+                        <div class="row mt-3">
+                            <div class="col-5">Thuật toán:</div>
+                            <div class="col-6">
+                                <select id="select-algorithm" style="border: none; background-color: #1A73E8; color: white; outline: none;">
+                                    <option value="0">Dijkstra</option>
+                                    <option value="1">A Star</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>            
                 </div>
             </div>
             <div class="content-result">
-
+                <div id="length-line" style="padding: 10px; color: blue;">
+                    <div class="row">
+                        <div class="col-sm-5">Tổng quãng đường:</div>
+                    </div>
+                    
+                </div>
             </div>
         </nav>
 
@@ -66,11 +80,27 @@
             <button type="button" id="sidebarCollapse" class="btn btn-info" style="position: absolute; right: 10px; top: 10px;">
                 <i class="fa fa-search" style="font-size: 25px"></i>
             </button>
-            <button type="button" id="btnRefresh" class="btn btn-info" style="position: absolute; right: 10px; top: 100px;">
-                <i class="fa fa-refresh" style="font-size: 25px"></i>
+           <button type="button" id="btnRefresh" class="btn btn-info" style="position: absolute; right: 10px; top: 100px;">
+               <i class="fa fa-refresh" style="font-size: 25px"></i>
             </button>
             <div id="position_mouse" style="position: absolute; right: 10px; bottom: 10px;"></div>
         </div>
+
+        <div id="popup" class="ol-popup">
+            <div id="popup-content">
+              <table id="attributeTable">
+                <thead>
+                    <tr>
+                      <th>Tên đường</th>
+                      <th>Chiều dài</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  
+                </tbody>
+              </table>
+            </div>
+          </div>
     
 
         <script type="text/javascript" src="{% static 'v6.6.1-dist/ol.js' %}"></script>

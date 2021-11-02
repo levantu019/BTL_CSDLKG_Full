@@ -1,3 +1,6 @@
+// Biến lưu các layer và marker
+var list_layers = [];
+
 // Tạo GeoJSON từ dữ liệu server gửi về
 function createGeoJSON(geom){
     var geojsonObject = {
@@ -15,17 +18,49 @@ function createGeoJSON(geom){
     return geojsonObject;
 }
 
+
+function getRandomColor() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+
+
+// Hàm show tổng độ dài quãng đường
+function append_total_length(length, color_random){
+  length = Math.round(length * 1000) / 1000;
+  if (length > 1000){
+    length = Math.round(length * 1000) / 1000000;
+    var str_length = length + "  (km)";
+  }
+  else{
+    var str_length = length + "  (m)";
+  }
+  let new_line = `<div class="row m-2 info-new-line">
+                      <div class="col-sm-4">
+                          <div style="width: 30px; height: 30px; background: ${color_random};"></div>
+                      </div>
+                      <div class="col-sm-8" style="line-height: 30px;">${str_length}</div>
+                  </div>`
+  $("#length-line").append(new_line);
+}
+
+
 // Tạo biến lưu layer của kết quả
 var vectorLayer = null;
-
+var gg;
 // Gửi dữ liệu tạo độ điểm click lên server
 // Nhận về danh sách GeoJSON của các đoạn đường
-function sendData(start, end){
+function sendData(start, end, algorithm){
     var start_end = [];
     start_end.push({"start_X": start[0]});
     start_end.push({"start_Y": start[1]});
     start_end.push({"end_X": end[0]});
     start_end.push({"end_Y": end[1]});
+    start_end.push({"algorithm": algorithm});
     start_end = JSON.stringify(start_end);
 
     var data_url = "run/way/search/" + start_end;
@@ -36,12 +71,13 @@ function sendData(start, end){
         dataType: 'json',
         success: function (response) {
             var geojson = JSON.parse(response['res']);
+            var color_random = getRandomColor();
             if(geojson != '-1'){
                 var way = createGeoJSON(geojson);
                 const styles = {
                   'MultiLineString': new ol.style.Style({
                     stroke: new ol.style.Stroke({
-                      color: 'green',
+                      color: color_random,
                       width: 5,
                     })
                   }),
@@ -54,6 +90,12 @@ function sendData(start, end){
                   style: styles['MultiLineString'],
                 });
                 map.addLayer(vectorLayer);
+                list_layers.push(vectorLayer);
+                let length = 0;
+                way.features.forEach((item) => {
+                    length = length + item.properties.f3;
+                });
+                append_total_length(length, color_random);                
             }
             else{
                 alert('Không tìm thấy đường đi');
@@ -74,9 +116,10 @@ function checkInput(){
 //    Dữ liệu trong input là dạng string, thực hiện chuyển về dạng cặp toạ độ
     var coordinate_start = [parseFloat(start.split(',')[0]), parseFloat(start.split(',')[1])];
     var coordinate_end = [parseFloat(end.split(',')[0]), parseFloat(end.split(',')[1])];
+    var algorithm = $("#select-algorithm").val();
 
     if(start != "" && end != ""){
-        sendData(coordinate_start, coordinate_end);
+        sendData(coordinate_start, coordinate_end, algorithm);
     }
 }
 
@@ -103,6 +146,7 @@ function createStyle(src, img) {
   });
 }
 
+
 // Tạo biến lưu marker
 var marker = null;
 
@@ -118,6 +162,7 @@ map.on('singleclick', function(evt){
         },
         source: new ol.source.Vector({features: [iconFeature]}),
       });
+    list_layers.push(marker);
 
 //    Nếu đang focus thẻ input thì nhập toạ độ vào thẻ đó và kiểm tra hàm checkInput()
     if(tag_focusing == "INPUT"){
@@ -127,12 +172,14 @@ map.on('singleclick', function(evt){
     }
 })
 
+$("#select-algorithm").change(function(){
+  checkInput();
+})
 
 $("#btnRefresh").on('click', function(){
-    map.getLayers().forEach(function (layer){
-        map.removeLayer(layer);
-    });
-    map.addLayer(doanduong);
-    map.addLayer(doantimduong);
-    map.addLayer(nutgiaothong);
+    list_layers.forEach((item) => {
+      map.removeLayer(item);
+    })
+    $("input").val('');
+    $("#length-line .info-new-line").remove();
 })
